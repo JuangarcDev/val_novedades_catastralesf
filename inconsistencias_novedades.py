@@ -30,7 +30,7 @@ def connect_to_db():
         log_message(f"Error al conectar con la Base de Datos PostgreSQL: {e}")
         return None
     
-def get_table_data(conn, table_name):
+def get_table_data(conn, table_name, town, date_i, date_f):
     """
     Obtiene los datos de una tabla especifica de la DB PostgreSQL
     """
@@ -39,8 +39,8 @@ def get_table_data(conn, table_name):
         query = f"""
         SELECT id, resolution_number 
         FROM {table_name} 
-        WHERE town = '25168'
-        AND estado_actual_fecha_inicio BETWEEN '2024-11-01' AND '2024-12-12'
+        WHERE town = '{town}'
+        AND estado_actual_fecha_inicio BETWEEN '{date_i}' AND '{date_f}'
         AND resolution_number IS NOT NULL
         ORDER BY resolution_number ASC
         """
@@ -122,9 +122,12 @@ def main():
         return
     
     try:
-        # CONSULTA DE DATOS EN LA DB DE POSTGRESQL
+        # PARAMETROS PARA CONSULTA DE DATOS EN LA DB DE POSTGRESQL
         db_table_name = 'data.tramite' # CAMBIAR NOMBRE DE LA TABLA, DE SER NECESARIO
-        db_data = get_table_data(db_connection, db_table_name)
+        db_town ='25168'
+        db_date_i = '2024-11-01'
+        db_date_f = '2024-12-12'
+        db_data = get_table_data(db_connection, db_table_name, db_town, db_date_i, db_date_f)
 
         # PROCESAR EL ARCHIVO XML
         xml_file_path =  r"C:\ACC\Novedades_Catastrales\INSUMOS\XML\Registro_novedades_25168.xml"  # Ruta del archivo XML
@@ -141,9 +144,9 @@ def main():
         if missing_records:
             sql_query = f"""
             SELECT * 
-            FROM data.tramite
-            WHERE town = '25168'
-              AND estado_actual_fecha_inicio BETWEEN '2024-11-01' AND '2024-12-12'
+            FROM {db_table_name}
+            WHERE town = '{db_town}'
+              AND estado_actual_fecha_inicio BETWEEN '{db_date_i}' AND '{db_date_f}'
               AND resolution_number IN ({', '.join(f"'{value}'" for value in missing_records.values())})
             ORDER BY resolution_date ASC;
             """
