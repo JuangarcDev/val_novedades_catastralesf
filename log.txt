@@ -29,5 +29,14 @@ Primeros 10 registros faltantes:
 ID: 110452, Resolución: 251680000092-2024
 Proceso completado. Los registros faltantes se han identificado: 
 ID TRAMITE: 110452, NUMERO RESOLUCION: 251680000092-2024
+Consulta SQL para insertar en la DB:
+
+            SELECT * 
+            FROM data.tramite
+            WHERE town = '25168'
+              AND estado_actual_fecha_inicio BETWEEN '2024-11-01' AND '2024-12-12'
+              AND resolution_number IN ('251680000092-2024')
+            ORDER BY resolution_date ASC;
+            
 Conexión con la Base de Datos cerrada.
 Fin del script.

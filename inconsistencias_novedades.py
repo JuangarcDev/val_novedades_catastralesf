@@ -136,6 +136,20 @@ def main():
         log_message("Proceso completado. Los registros faltantes se han identificado: ")
         for record_id, record_value in missing_records.items():
             log_message(f"ID TRAMITE: {record_id}, NUMERO RESOLUCION: {record_value}")
+    
+        # Sentencia SQL final para copiar y pegar en la DB
+        if missing_records:
+            sql_query = f"""
+            SELECT * 
+            FROM data.tramite
+            WHERE town = '25168'
+              AND estado_actual_fecha_inicio BETWEEN '2024-11-01' AND '2024-12-12'
+              AND resolution_number IN ({', '.join(f"'{value}'" for value in missing_records.values())})
+            ORDER BY resolution_date ASC;
+            """
+            log_message("Consulta SQL para insertar en la DB:")
+            log_message(sql_query)
+                
     finally:
         db_connection.close()
         log_message("Conexión con la Base de Datos cerrada.")
