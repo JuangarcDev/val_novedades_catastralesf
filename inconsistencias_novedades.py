@@ -1,3 +1,39 @@
+"""
+DOCUMENTACIÓN DEL SCRIPT VALIDACIÓN INCONSISTENCIAS NOVEDADES
+
+Este script identifica registros faltantes al comparar los datos de un archivo XML con los de una base de datos PostgreSQL. 
+Se utiliza para verificar qué trámites de una tabla específica (tramite) de la base de datos(Novedades_Tramites) no están presentes en el archivo XML, 
+basándose en el ID del tramite y el número de resolución.
+
+HERRAMIENTAS UTILIZADAS:
+- PostgreSQL: Base de datos utilizada para consultar los registros.
+- psycopg2: Librería para conectarse y ejecutar consultas en PostgreSQL.
+- xml.etree.ElementTree: Módulo para procesar y extraer datos de archivos XML.
+- decouple: Librería para manejar credenciales y configuración sensible desde un archivo `.env`.
+
+FUNCIONAMIENTO:
+1. Conexión a la base de datos PostgreSQL.
+2. Consulta de registros desde una tabla específica, según criterios de municipio, fechas, y campo "número de resolución".
+3. Extracción de datos relevantes del archivo XML.
+4. Comparación de los datos de la base de datos con los del archivo XML para identificar registros faltantes.
+5. Generación de un archivo de log con el flujo detallado de ejecución, resultados, y una consulta SQL para analizar los registros faltantes directamente en la base de datos.
+
+PARAMETROS/INPUTS:
+1. Credenciales de la base de datos PostgreSQL (host, nombre de la base de datos, usuario, contraseña, puerto).
+2. Ubicación del archivo XML a analizar.
+3. Nombre de la tabla de la base de datos a evaluar.
+4. Código del municipio para filtrar registros en la base de datos.
+5. Fecha inicial y final para acotar el rango de los registros evaluados.
+
+OUTPUTS:
+1. Archivo de log (`log.txt`) que incluye:
+   - Inicio del script.
+   - Estado de la conexión a la base de datos.
+   - Detalles de las consultas realizadas, incluyendo cantidad total y los primeros 10 registros.
+   - Identificación de registros faltantes (cantidad total y los primeros 10).
+   - Consulta SQL generada para ejecutar en pgAdmin y analizar los registros faltantes.
+   - Finalización del script.
+"""
 import psycopg2
 import xml.etree.ElementTree as ET
 from decouple import config
@@ -32,7 +68,7 @@ def connect_to_db():
     
 def get_table_data(conn, table_name, town, date_i, date_f):
     """
-    Obtiene los datos de una tabla especifica de la DB PostgreSQL
+    Obtiene los datos de id, núnero de resolución de una tabla especifica (tramite) de la DB PostgreSQL, para un municipio y rango de fechas descrito
     """
     try:
         cursor = conn.cursor()
@@ -51,14 +87,14 @@ def get_table_data(conn, table_name, town, date_i, date_f):
             log_message("Primeros 10 registros de la tabla:")
             for row in result[:10]:
                 log_message(f"ID TRAMITE: {row[0]}, NUMERO DE RESOLUCION: {row[1]}")
-        return {row[0]: row[1] for row in result}  # Diccionario {id: valor}
+        return {row[0]: row[1] for row in result}  # Diccionario {id tramite: num resolución}
     except Exception as e:
         log_message(f"Error consultando la tabla {table_name}: {e}")
         return {}
     
 def parse_xml(file_path):
     """
-    Lee y procesa el archivo XML.
+    Lee y procesa el archivo XML. Extrae un diccionario radicado: resolucion
     """
     try:
         tree = ET.parse(file_path)
@@ -92,7 +128,8 @@ def parse_xml(file_path):
 def find_missing_records(db_data, xml_data):
     """
     Encuentra los registros presentes en la base de datos pero faltantes en el XML
-    basándose en los valores de 'resolution_number' y 'record_value'.
+    basándose en los valores de 'resolution_number' y 'record_value'. Haciendo contraste de registros del diccionario extraido de la DB
+    VS el diccionario extraido del XML
     """
     # Convertir los valores de xml_data a un conjunto para comparaciones eficientes
     xml_values = set(xml_data.values())
